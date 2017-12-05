@@ -1,0 +1,54 @@
+<html>
+    <script>
+        function markUploadComplete(params) {
+            const host = "0.0.0.0";
+            const port = 4001;
+            const guid = params["guid"];
+            let url = "http://" + host + ":" + port + "/upload_finish/" + guid;
+            fetch(url).then(() => {
+                console.log("upload success!");
+            })
+        }
+
+        function uploadBlob(params, blob) {
+            const url = "http://" + params["target_url"] + "/upload/" + params["guid"];
+            const size = params["parameters"]["chunk_size"];
+            const send = blob.slice(0, size)
+            const rest = blob.slice(size)
+            const req = new Request(url, {method: "POST", body: send})
+            console.log("fetching using:");
+            console.dir(req);
+            fetch(req)
+            .then(() => {
+                if (0 < rest.size)
+                {
+                    uploadBlob(params, rest);
+                }
+                else
+                {
+                    markUploadComplete(params);
+                }
+            })
+        }
+
+        function getUploadParameters() {
+            const host = "0.0.0.0";
+            const port = 4000;
+            let str = "";
+            for (let i = 0; i < 10 * 1000; i++)
+                str += (i + ".");
+            const url = "http://" + host + ":" + port + "/start_upload/" + str.length;
+            
+            fetch(url).then( (resp) => {
+                resp.json().then( (params) => {
+                    console.log(params)
+                    //console.log("constructed string: " + str);
+                    uploadBlob(params, new Blob([str]));
+                })
+            })
+        }
+
+
+    </script>
+
+</html>
